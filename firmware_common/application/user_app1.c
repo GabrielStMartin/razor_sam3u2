@@ -1,5 +1,5 @@
 /*!*********************************************************************************************************************
-@file user_app1.c                                                                
+@file user_app1.c
 @brief User's tasks / applications are written here.  This description
 should be replaced by something specific to the task.
 
@@ -68,11 +68,11 @@ Function Definitions
 **********************************************************************************************************************/
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*! @publicsection */                                                                                            
+/*! @publicsection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*! @protectedsection */                                                                                            
+/*! @protectedsection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*!--------------------------------------------------------------------------------------------------------------------
@@ -92,6 +92,8 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  HEARTBEAT_OFF();
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -105,7 +107,7 @@ void UserApp1Initialize(void)
 
 } /* end UserApp1Initialize() */
 
-  
+
 /*!----------------------------------------------------------------------------------------------------------------------
 @fn void UserApp1RunActiveState(void)
 
@@ -129,7 +131,7 @@ void UserApp1RunActiveState(void)
 
 
 /*------------------------------------------------------------------------------------------------------------------*/
-/*! @privatesection */                                                                                            
+/*! @privatesection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 
@@ -140,15 +142,32 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
-    
+  static u16 u16Counter = U16_COUNTER_PERIOD_MS;
+  static bool bLightOn = FALSE;
+
+  if(--u16Counter == 0)
+  {
+    u16Counter = U16_COUNTER_PERIOD_MS;
+
+    if(bLightOn)
+    {
+      HEARTBEAT_OFF();
+      bLightOn = FALSE;
+    }
+    else
+    {
+      HEARTBEAT_ON();
+      bLightOn = TRUE;
+    }
+  }
 } /* end UserApp1SM_Idle() */
-     
+
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
-static void UserApp1SM_Error(void)          
+static void UserApp1SM_Error(void)
 {
-  
+
 } /* end UserApp1SM_Error() */
 
 
