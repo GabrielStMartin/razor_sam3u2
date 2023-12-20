@@ -62,6 +62,17 @@ Variable names shall start with "UserApp1_<type>" and be declared as static.
 static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                           /*!< @brief Timeout counter used across states */
 
+static const u16 au16LightCounters[] = {
+    U16_2HZ_PERIOD_MS,
+    U16_4HZ_PERIOD_MS,
+    U16_8HZ_PERIOD_MS,
+    U16_16HZ_PERIOD_MS,
+    U16_32HZ_PERIOD_MS
+  };
+static u16 u16Counter;
+static u8 u8LightCounterIndex;
+static u16 u16LightCounter;
+static bool bLightOn;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -92,6 +103,10 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  u16Counter = 0;
+  u8LightCounterIndex = 0;
+  u16LightCounter = 0;
+  bLightOn = FALSE;
   HEARTBEAT_OFF();
 
   /* If good initialization, set state to Idle */
@@ -106,7 +121,6 @@ void UserApp1Initialize(void)
   }
 
 } /* end UserApp1Initialize() */
-
 
 /*!----------------------------------------------------------------------------------------------------------------------
 @fn void UserApp1RunActiveState(void)
@@ -142,26 +156,23 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
-  static u16 u16Counter = U16_COUNTER_PERIOD_MS;
-  static bool bLightOn = FALSE;
-
-  if(--u16Counter == 0)
+  // Every 5 seconds change the light toggle period
+  if(++u16Counter == U16_COUNTER_PERIOD_MS)
   {
-    u16Counter = U16_COUNTER_PERIOD_MS;
-
-    if(bLightOn)
+    u16Counter = 0;
+    if(++u8LightCounterIndex == U8_LIGHT_COUNTER_ARRAY_SIZE)
     {
-      HEARTBEAT_OFF();
-      bLightOn = FALSE;
-    }
-    else
-    {
-      HEARTBEAT_ON();
-      bLightOn = TRUE;
+      u8LightCounterIndex = 0;
     }
   }
-} /* end UserApp1SM_Idle() */
 
+  // Toggle the light
+  if(++u16LightCounter >= au16LightCounters[u8LightCounterIndex])
+  {
+    u16LightCounter = 0;
+    ToggleLight();
+  }
+} /* end UserApp1SM_Idle() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
@@ -170,8 +181,20 @@ static void UserApp1SM_Error(void)
 
 } /* end UserApp1SM_Error() */
 
-
-
+/*-------------------------------------------------------------------------------------------------------------------*/
+static void ToggleLight(void)
+{
+  if(bLightOn)
+  {
+    HEARTBEAT_OFF();
+    bLightOn = FALSE;
+  }
+  else
+  {
+    HEARTBEAT_ON();
+    bLightOn = TRUE;
+  }
+} /* ToggleLiight() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */
