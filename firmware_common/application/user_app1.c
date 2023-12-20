@@ -1,5 +1,5 @@
 /*!*********************************************************************************************************************
-@file user_app1.c                                                                
+@file user_app1.c
 @brief User's tasks / applications are written here.  This description
 should be replaced by something specific to the task.
 
@@ -62,17 +62,21 @@ Variable names shall start with "UserApp1_<type>" and be declared as static.
 static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                           /*!< @brief Timeout counter used across states */
 
+static u16 u16BlinkCounter;
+static u8 u8BinaryCounter;
+static const LedNameType aBinaryCounterLeds[] = {RED, ORANGE, YELLOW, GREEN};
+static u8 u8LcdColorIndex;
 
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*! @publicsection */                                                                                            
+/*! @publicsection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*! @protectedsection */                                                                                            
+/*! @protectedsection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*!--------------------------------------------------------------------------------------------------------------------
@@ -92,6 +96,11 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  u16BlinkCounter = 0;
+  u8BinaryCounter = 0;
+  u8LcdColorIndex = 0;
+  SetAllLedsOff();
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -105,7 +114,7 @@ void UserApp1Initialize(void)
 
 } /* end UserApp1Initialize() */
 
-  
+
 /*!----------------------------------------------------------------------------------------------------------------------
 @fn void UserApp1RunActiveState(void)
 
@@ -129,7 +138,7 @@ void UserApp1RunActiveState(void)
 
 
 /*------------------------------------------------------------------------------------------------------------------*/
-/*! @privatesection */                                                                                            
+/*! @privatesection */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 
@@ -140,19 +149,123 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
-    
+  if(++u16BlinkCounter == U16_BLINK_PERIOD_MS)
+  {
+    u16BlinkCounter = 0;
+
+    /* Update the counter and roll at 16 */
+    if(++u8BinaryCounter == 16)
+    {
+      u8BinaryCounter = 0;
+    }
+    SetBinaryCounterLeds(u8BinaryCounter);
+
+    /* Manage to LCD backlight color */
+    if(++u8LcdColorIndex == U16_LCD_BACKLIGHT_COLORS_MAX)
+    {
+      u8LcdColorIndex = 0;
+    }
+    SetLcdBacklightColor(u8LcdColorIndex);
+  }
 } /* end UserApp1SM_Idle() */
-     
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
-static void UserApp1SM_Error(void)          
+static void UserApp1SM_Error(void)
 {
-  
+
 } /* end UserApp1SM_Error() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set all discrete LEDs off */
+static void SetAllLedsOff(void)
+{
+  for(u8 i = 0; i < U8_TOTAL_LEDS; ++i)
+  {
+    LedOff(i);
+  }
+} /* SetAllLedsOff() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the binary counter LEDs based from u8Value */
+static void SetBinaryCounterLeds(const u8 u8Value)
+{
+  for(u8 i = 0; i < 4; ++i)
+  {
+    if(u8Value & (1 << i))
+    {
+      LedOn(aBinaryCounterLeds[i]);
+    }
+    else
+    {
+      LedOff(aBinaryCounterLeds[i]);
+    }
+  }
+} /* SetBinaryCounterLeds() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the LCD backlight color from u8Value */
+static void SetLcdBacklightColor(const u8 u8Value)
+{
+  switch (u8Value)
+  {
+    case 0:
+      /* white */
+      LedOn(LCD_RED);
+      LedOn(LCD_GREEN);
+      LedOn(LCD_BLUE);
+      break;
+
+    case 1:
+      /* purple */
+      LedOn(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOn(LCD_BLUE);
+      break;
+
+    case 2:
+      /* blue */
+      LedOff(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOn(LCD_BLUE);
+      break;
+
+    case 3:
+      /* cyan */
+      LedOff(LCD_RED);
+      LedOn(LCD_GREEN);
+      LedOn(LCD_BLUE);
+      break;
+
+    case 4:
+      /* green */
+      LedOff(LCD_RED);
+      LedOn(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      break;
+
+    case 5:
+      /* yellow */
+      LedOn(LCD_RED);
+      LedOn(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      break;
+
+    case 6:
+      /* red */
+      LedOn(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      break;
+
+    default:
+      /* off */
+      LedOff(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      break;
+  }
+} /* SetLcdBacklightColor() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */

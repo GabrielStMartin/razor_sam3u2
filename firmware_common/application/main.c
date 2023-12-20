@@ -1,6 +1,6 @@
 /*!**********************************************************************************************************************
-@file main.c                                                                
-@brief Main system file for the EiE firmware.  
+@file main.c
+@brief Main system file for the EiE firmware.
 ***********************************************************************************************************************/
 
 #include "configuration.h"
@@ -19,12 +19,12 @@ volatile u32 G_u32ApplicationFlags = 0;  /*!< @brief Global system application f
 
 /* Task short names corresponding to G_u32ApplicationFlags in main.h */
 #ifdef EIE_ASCII
-const u8 G_aau8AppShortNames[NUMBER_APPLICATIONS][MAX_TASK_NAME_SIZE] = 
+const u8 G_aau8AppShortNames[NUMBER_APPLICATIONS][MAX_TASK_NAME_SIZE] =
 {"LED", "BUTTON", "DEBUG", "TIMER", "LCD", "ADC", "ANT"};
 #endif /* EIE_ASCII */
 
 #ifdef EIE_DOTMATRIX
-const u8 G_aau8AppShortNames[NUMBER_APPLICATIONS][MAX_TASK_NAME_SIZE] = 
+const u8 G_aau8AppShortNames[NUMBER_APPLICATIONS][MAX_TASK_NAME_SIZE] =
 {"LED", "BUTTON", "DEBUG", "TIMER", "LCD", "ADC", "ANT", "CAPTOUCH"};
 #endif /* EIE_DOTMATRIX */
 
@@ -55,13 +55,13 @@ int main(void)
   G_u32SystemFlags |= _SYSTEM_INITIALIZING;
 
   /* Low level initialization */
-  WatchDogSetup(); 
+  WatchDogSetup();
   ClockSetup();
   GpioSetup();
   PWMSetupAudio();
   InterruptSetup();
   SysTickSetup();
-  
+
   /* Driver initialization */
   MessagingInitialize();
   UartInitialize();
@@ -69,7 +69,7 @@ int main(void)
 
   /* Debug messages through DebugPrintf() are available from here */
   ButtonInitialize();
-  TimerInitialize();  
+  TimerInitialize();
   SpiInitialize();
   SspInitialize();
   TwiInitialize();
@@ -79,14 +79,14 @@ int main(void)
   LedInitialize();
   AntInitialize();
   AntApiInitialize();
-  
+
 #ifdef EIE_ASCII
 #endif /* EIE_ASCII */
 
 #ifdef EIE_DOTMATRIX
   CapTouchInitialize();
 #endif /* EIE_DOTMATRIX */
- 
+
   /* Application initialization */
   UserApp1Initialize();
   UserApp2Initialize();
@@ -95,8 +95,8 @@ int main(void)
   /* Exit initialization */
   SystemStatusReport();
   G_u32SystemFlags &= ~_SYSTEM_INITIALIZING;
-  
-  /* Super loop */  
+
+  /* Super loop */
   while(1)
   {
     WATCHDOG_BONE();
@@ -108,7 +108,7 @@ int main(void)
     DebugRunActiveState();
 
     ButtonRunActiveState();
-    TimerRunActiveState(); 
+    TimerRunActiveState();
     SpiRunActiveState();
     SspRunActiveState();
     TwiRunActiveState();
@@ -130,14 +130,14 @@ int main(void)
     UserApp1RunActiveState();
     UserApp2RunActiveState();
     UserApp3RunActiveState();
-        
+
     /* System sleep */
     HEARTBEAT_OFF();
     SystemSleep();
     HEARTBEAT_ON();
-    
+
   } /* end while(1) main super loop */
-  
+
 } /* end main() */
 
 
