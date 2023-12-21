@@ -146,19 +146,92 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
-
+  ButtonPressedLedIndication();
+  ButtonHeldLedIndication();
+  BlinkingLedManager();
 } /* end UserApp1SM_Idle() */
-
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)
 {
-
+  /* Do nothing */
 } /* end UserApp1SM_Error() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Turn on white LED(0) if button0 is pressed */
+/* Turn on purple LED(1) if button1 is pressed */
+/* Turn on blue LED(2) if button2 is pressed */
+static void ButtonPressedLedIndication(void)
+{
+  for(u8 i = 0; i < 3; ++i)
+  {
+    if(IsButtonPressed(i))
+    {
+      LedOn(i);
+    }
+    else
+    {
+      LedOff(i);
+    }
+  }
+} /* ButtonPressedLedIndication() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Turn on cyan LED if button3 is pressed for 2seconds */
+static void ButtonHeldLedIndication(void)
+{
+  if(IsButtonHeld(BUTTON3, 2000))
+  {
+    LedOn(CYAN);
+  }
+  else
+  {
+    LedOff(CYAN);
+  }
+} /* ButtonHeldLedIndication() */
 
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* The blinking LED manager */
+static void BlinkingLedManager(void)
+{
+  static const LedRateType aeBlinkRate[] = {LED_1HZ, LED_2HZ, LED_4HZ, LED_8HZ};
+  static const u8 u8BlinkRateSize = sizeof(aeBlinkRate) / sizeof(aeBlinkRate[0]);
+  static u8 u8BlinkRateIndex = 0;
+  static bool bIsBlinking = FALSE;
+
+  /* Start blinking the yellow LED when button1 is pressed */
+  /* If the yellow LED is already blinking then turn off the yellow LED */
+  if(WasButtonPressed(BUTTON1))
+  {
+    ButtonAcknowledge(BUTTON1);
+    if(bIsBlinking)
+    {
+      bIsBlinking = FALSE;
+      LedOff(YELLOW);
+    }
+    else
+    {
+      bIsBlinking = TRUE;
+      LedBlink(YELLOW, aeBlinkRate[u8BlinkRateIndex]);
+    }
+  }
+
+  /* When button2 is pressed */
+  /* If the yellow LED is already blinking then update the blink rate */
+  if(WasButtonPressed(BUTTON2))
+  {
+    ButtonAcknowledge(BUTTON2);
+    if(bIsBlinking)
+    {
+      if(++u8BlinkRateIndex == u8BlinkRateSize)
+      {
+        u8BlinkRateIndex = 0;
+      }
+      LedBlink(YELLOW, aeBlinkRate[u8BlinkRateIndex]);
+    }
+  }
+} /* BlinkingLedManager() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */
