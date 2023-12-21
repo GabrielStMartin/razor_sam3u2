@@ -62,13 +62,8 @@ Variable names shall start with "UserApp1_<type>" and be declared as static.
 static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                           /*!< @brief Timeout counter used across states */
 
-static u16 u16BlinkCounter;
-static u8 u8RolloverCounter;
-static u8 u8PatternCounter;
-static u8 u8BinaryCounter;
 static const LedNameType aRightLeds[] = {RED, ORANGE, YELLOW, GREEN};
 static const LedNameType aLeftLeds[] = {WHITE, PURPLE, BLUE, CYAN};
-static u8 u8LcdColorIndex;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -99,12 +94,10 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
-  u16BlinkCounter = 0;
-  u8RolloverCounter = 0;
-  u8PatternCounter = 0;
-  u8BinaryCounter = 0;
-  u8LcdColorIndex = 0;
   SetAllLedsOff();
+  LedOn(LCD_RED);
+  LedOff(LCD_GREEN);
+  LedOff(LCD_BLUE);
 
   /* If good initialization, set state to Idle */
   if( 1 )
@@ -154,6 +147,26 @@ State Machine Function Definitions
 /* What does this state do? */
 static void UserApp1SM_Idle(void)
 {
+  LedPatternManager();
+  LcdPwmManager();
+} /* end UserApp1SM_Idle() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Handle an error */
+static void UserApp1SM_Error(void)
+{
+
+} /* end UserApp1SM_Error() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Led pattern manager */
+static void LedPatternManager(void)
+{
+  static u16 u16BlinkCounter = 0;
+  static u8 u8RolloverCounter = 0;
+  static u8 u8PatternCounter = 0;
+  static u8 u8BinaryCounter = 0;
+
   if(++u16BlinkCounter == U16_BLINK_PERIOD_MS)
   {
     u16BlinkCounter = 0;
@@ -176,14 +189,7 @@ static void UserApp1SM_Idle(void)
 
     SetLeds(u8PatternCounter, u8BinaryCounter);
   }/* if(++u16BlinkCounter == U16_BLINK_PERIOD_MS) */
-} /* end UserApp1SM_Idle() */
-
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Handle an error */
-static void UserApp1SM_Error(void)
-{
-
-} /* end UserApp1SM_Error() */
+} /* LedPatternManager() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Set the leds from u8Pattern and u8Value */
@@ -351,68 +357,37 @@ static void SetLeftHalfLeds(void)
 } /* SetLeftHalfLeds() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Set the LCD backlight color from u8Value */
-static void SetLcdBacklightColor(const u8 u8Value_)
+/* LCD backlight PWM manager */
+static void LcdPwmManager(void)
 {
-  switch (u8Value_)
+  static u8 u8LcdUpdateCounter = 0;
+  static u8 u8LcdPwmStep = 0;
+  static bool bLcdDecrementStep = FALSE;
+
+  if(++u8LcdUpdateCounter == U8_LCD_BACKLIGHT_UPDATE_MS)
   {
-    case 0:
-      /* white */
-      LedOn(LCD_RED);
-      LedOn(LCD_GREEN);
-      LedOn(LCD_BLUE);
-      break;
+    u8LcdUpdateCounter = 0;
 
-    case 1:
-      /* purple */
-      LedOn(LCD_RED);
-      LedOff(LCD_GREEN);
-      LedOn(LCD_BLUE);
-      break;
+    /* Update LCD blue backlight */
+    LedPWM(LCD_BLUE, u8LcdPwmStep);
 
-    case 2:
-      /* blue */
-      LedOff(LCD_RED);
-      LedOff(LCD_GREEN);
-      LedOn(LCD_BLUE);
-      break;
-
-    case 3:
-      /* cyan */
-      LedOff(LCD_RED);
-      LedOn(LCD_GREEN);
-      LedOn(LCD_BLUE);
-      break;
-
-    case 4:
-      /* green */
-      LedOff(LCD_RED);
-      LedOn(LCD_GREEN);
-      LedOff(LCD_BLUE);
-      break;
-
-    case 5:
-      /* yellow */
-      LedOn(LCD_RED);
-      LedOn(LCD_GREEN);
-      LedOff(LCD_BLUE);
-      break;
-
-    case 6:
-      /* red */
-      LedOn(LCD_RED);
-      LedOff(LCD_GREEN);
-      LedOff(LCD_BLUE);
-      break;
-
-    default:
-      /* off */
-      LedOff(LCD_RED);
-      LedOff(LCD_GREEN);
-      LedOff(LCD_BLUE);
-      break;
-  } /* switch (u8Value_) */
-} /* SetLcdBacklightColor() */
+    /* Update PWM step */
+    if(!bLcdDecrementStep)
+    {
+      if(++u8LcdPwmStep == 20)
+      {
+        bLcdDecrementStep = TRUE;
+      }
+    }
+    else
+    {
+      if(--u8LcdPwmStep == 0)
+      {
+        bLcdDecrementStep = FALSE;
+      }
+    }
+  } /* if(++u8LcdUpdateCounter == U8_LCD_BACKLIGHT_UPDATE_MS) */
+} /* LcdPwmManager() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* End of File                                                                                                        */

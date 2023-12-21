@@ -50,6 +50,7 @@ State Machine Declarations
 static void UserApp1SM_Idle(void);
 static void UserApp1SM_Error(void);
 
+static void LedPatternManager(void);
 static void SetLeds(const u8 u8Pattern_, const u8 u8Value_);
 static void SetAllLedsOff(void);
 static void SetBinaryCounterLeds(const u8 u8Value_);
@@ -59,7 +60,8 @@ static void SetOddLeds(void);
 static void SetEvenLeds(void);
 static void SetRightHalfLeds(void);
 static void SetLeftHalfLeds(void);
-static void SetLcdBacklightColor(const u8 u8Value_);
+
+static void LcdPwmManager(void);
 
 /**********************************************************************************************************************
 Constants / Definitions
@@ -68,6 +70,8 @@ Constants / Definitions
 #define U16_LCD_BACKLIGHT_COLORS_MAX ((u16)7)
 #define U8_CHANGE_PATTERN_ROLL_COUNT ((u8)6)
 #define U8_PATTERN_NUMBER ((u8)5)
+
+#define U8_LCD_BACKLIGHT_UPDATE_MS ((u8)40)
 
 #endif /* __USER_APP1_H */
 
