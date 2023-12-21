@@ -63,8 +63,11 @@ static fnCode_type UserApp1_pfStateMachine;               /*!< @brief The state 
 //static u32 UserApp1_u32Timeout;                           /*!< @brief Timeout counter used across states */
 
 static u16 u16BlinkCounter;
+static u8 u8RolloverCounter;
+static u8 u8PatternCounter;
 static u8 u8BinaryCounter;
-static const LedNameType aBinaryCounterLeds[] = {RED, ORANGE, YELLOW, GREEN};
+static const LedNameType aRightLeds[] = {RED, ORANGE, YELLOW, GREEN};
+static const LedNameType aLeftLeds[] = {WHITE, PURPLE, BLUE, CYAN};
 static u8 u8LcdColorIndex;
 
 /**********************************************************************************************************************
@@ -97,6 +100,8 @@ Promises:
 void UserApp1Initialize(void)
 {
   u16BlinkCounter = 0;
+  u8RolloverCounter = 0;
+  u8PatternCounter = 0;
   u8BinaryCounter = 0;
   u8LcdColorIndex = 0;
   SetAllLedsOff();
@@ -157,16 +162,20 @@ static void UserApp1SM_Idle(void)
     if(++u8BinaryCounter == 16)
     {
       u8BinaryCounter = 0;
+      /* Change patterns */
+      if(++u8RolloverCounter == U8_CHANGE_PATTERN_ROLL_COUNT)
+      {
+        u8RolloverCounter = 0;
+        /* Reset pattern number */
+        if(++u8PatternCounter == U8_PATTERN_NUMBER)
+        {
+          u8PatternCounter = 0;
+        }
+      }
     }
-    SetBinaryCounterLeds(u8BinaryCounter);
 
-    /* Manage to LCD backlight color */
-    if(++u8LcdColorIndex == U16_LCD_BACKLIGHT_COLORS_MAX)
-    {
-      u8LcdColorIndex = 0;
-    }
-    SetLcdBacklightColor(u8LcdColorIndex);
-  }
+    SetLeds(u8PatternCounter, u8BinaryCounter);
+  }/* if(++u16BlinkCounter == U16_BLINK_PERIOD_MS) */
 } /* end UserApp1SM_Idle() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
@@ -177,10 +186,56 @@ static void UserApp1SM_Error(void)
 } /* end UserApp1SM_Error() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the leds from u8Pattern and u8Value */
+static void SetLeds(const u8 u8Pattern_, const u8 u8Value_)
+{
+  switch(u8Pattern_)
+  {
+    case 0:
+      SetRightToLeftLeds(u8Value_);
+      break;
+
+    case 1:
+      SetBinaryCounterLeds(u8Value_);
+      break;
+
+    case 2:
+      if((u8Value_ % 2) == 0)
+      {
+        SetEvenLeds();
+      }
+      else
+      {
+        SetOddLeds();
+      }
+      break;
+
+    case 3:
+      SetLeftToRightLeds(u8Value_);
+      break;
+
+    case 4:
+      if((u8Value_ %2) == 0)
+      {
+        SetLeftHalfLeds();
+      }
+      else
+      {
+        SetRightHalfLeds();
+      }
+      break;
+
+    default:
+      SetAllLedsOff();
+      break;
+  } /* switch(u8PatternCounter) */
+} /* SetLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
 /* Set all discrete LEDs off */
 static void SetAllLedsOff(void)
 {
-  for(u8 i = 0; i < U8_TOTAL_LEDS; ++i)
+  for(u8 i = 0; i < 8; ++i)
   {
     LedOff(i);
   }
@@ -188,26 +243,118 @@ static void SetAllLedsOff(void)
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Set the binary counter LEDs based from u8Value */
-static void SetBinaryCounterLeds(const u8 u8Value)
+static void SetBinaryCounterLeds(const u8 u8Value_)
 {
   for(u8 i = 0; i < 4; ++i)
   {
-    if(u8Value & (1 << i))
+    if(u8Value_ & (1 << i))
     {
-      LedOn(aBinaryCounterLeds[i]);
+      LedOn(aRightLeds[i]);
+      LedOn(aLeftLeds[i]);
     }
     else
     {
-      LedOff(aBinaryCounterLeds[i]);
+      LedOff(aRightLeds[i]);
+      LedOff(aLeftLeds[i]);
     }
   }
 } /* SetBinaryCounterLeds() */
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Set the LCD backlight color from u8Value */
-static void SetLcdBacklightColor(const u8 u8Value)
+/* Set the leds right to left from u8Value */
+static void SetRightToLeftLeds(const u8 u8Value_)
 {
-  switch (u8Value)
+  for(u8 i = 0; i < 8; ++i)
+  {
+    if((7 - (u8Value_ % 8)) == i)
+    {
+      LedOn(i);
+    }
+    else
+    {
+      LedOff(i);
+    }
+  }
+} /* SetRightToLeftLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the leds left to right from u8Value */
+static void SetLeftToRightLeds(const u8 u8Value_)
+{
+  for(u8 i = 0; i < 8; ++i)
+  {
+    if((u8Value_ % 8) == i)
+    {
+      LedOn(i);
+    }
+    else
+    {
+      LedOff(i);
+    }
+  }
+} /* SetLeftToRightLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the odd leds */
+static void SetOddLeds(void)
+{
+  for(u8 i = 0; i < 8; ++i)
+  {
+    if((i % 2) == 0)
+    {
+      LedOff(i);
+    }
+    else
+    {
+      LedOn(i);
+    }
+  }
+} /* SetOddLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the even leds */
+static void SetEvenLeds(void)
+{
+  for(u8 i = 0; i < 8; ++i)
+  {
+    if((i % 2) == 0)
+    {
+      LedOn(i);
+    }
+    else
+    {
+      LedOff(i);
+    }
+  }
+} /* SetEvenLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the right half leds */
+static void SetRightHalfLeds(void)
+{
+  for(u8 i = 0; i < 4; ++i)
+  {
+    LedOn(aRightLeds[i]);
+    LedOff(aLeftLeds[i]);
+  }
+} /* SetRightHalfLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the left half leds */
+static void SetLeftHalfLeds(void)
+{
+  for(u8 i = 0; i < 4; ++i)
+  {
+    LedOff(aRightLeds[i]);
+    LedOn(aLeftLeds[i]);
+  }
+} /* SetLeftHalfLeds() */
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Set the LCD backlight color from u8Value */
+static void SetLcdBacklightColor(const u8 u8Value_)
+{
+  switch (u8Value_)
   {
     case 0:
       /* white */
@@ -264,7 +411,7 @@ static void SetLcdBacklightColor(const u8 u8Value)
       LedOff(LCD_GREEN);
       LedOff(LCD_BLUE);
       break;
-  }
+  } /* switch (u8Value_) */
 } /* SetLcdBacklightColor() */
 
 /*--------------------------------------------------------------------------------------------------------------------*/
